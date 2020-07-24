@@ -1,0 +1,44 @@
+version: "3"
+
+volumes:
+  MongoData:
+
+services: 
+  mongodb:
+    container_name: mongodb
+    image: mongo:latest
+    restart: always
+    volumes: 
+      - MongoData:/data/db
+
+  nginx:
+    container_name: nginx
+    image: nginx:alpine
+    restart: always
+    ports: ["8085:80"]
+    volumes:
+      - ./Frontend/dist/:/var/www/
+      - ./Nginx/:/etc/nginx/templates
+    links:
+      - backend
+    env_file:
+      - ./.env
+    expose:
+      - 80
+
+  backend:
+    container_name: backend
+    image: node:current-alpine
+    restart: always
+    env_file:
+      - './.env'
+    environment: 
+      - MONGO_ADDR=mongodb
+    volumes: 
+      - ./Backend/:/usr/src/app
+    depends_on:
+      - mongodb
+    expose:
+      - ${BACKEND_PORT}
+    working_dir: /usr/src/app/
+    command: npm run watch
